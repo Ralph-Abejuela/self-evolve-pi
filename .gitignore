@@ -1,3 +1,5 @@
 node_modules/
 .self-evolve/
 results/
+
+__pycache__/

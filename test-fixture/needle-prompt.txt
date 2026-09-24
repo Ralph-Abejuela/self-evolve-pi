@@ -1,0 +1,8 @@
+Below is a maintenance manifest. A question follows it. Read carefully: several similar-looking codes appear, but only one is the CURRENT override code.
+
+@@BODY@@
+
+QUESTION (answer in exactly three numbered lines; quote nothing else):
+1. What is the CURRENT field override code?
+2. What restriction applies to its handling?
+3. List the two decoy codes and state why each must not be used.

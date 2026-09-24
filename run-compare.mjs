@@ -86,9 +86,11 @@ function runPi(args, label) {
 	return r.stdout ?? "";
 }
 
+const RUNS_PER_CELL = Number(process.env.N_RUNS ?? 5);
 const rows = [];
-const results = { runs: [] };
+const results = { runs: [], runsPerCell: RUNS_PER_CELL };
 
+for (let rep = 1; rep <= RUNS_PER_CELL; rep++) {
 for (const sc of SCENARIOS) {
 	// hand every scenario to pi through a file: avoids CLI quoting limits,
 	// and both variants read it the same way
@@ -97,7 +99,7 @@ for (const sc of SCENARIOS) {
 	const taskPrompt = `Read the file scenario-${sc.id}.txt in this directory and follow its instructions exactly. Reply with the final answer only.`;
 	for (const variant of ["baseline", "extension"]) {
 		const before = newestSession();
-		const label = `${variant}-${sc.id}`;
+		const label = `${variant}-${sc.id}-r${rep}`;
 		const args = variant === "baseline"
 			? ["-ns", "-ne", "-nc", "-p", taskPrompt]
 			: ["-ns", "-nc", "--extension", EXT, "-p", taskPrompt];
@@ -113,8 +115,21 @@ for (const sc of SCENARIOS) {
 			m = telemetryTokens(label);
 		}
 		rows.push({ scenario: sc.id, variant, ok, ...(m ?? { input: NaN, output: NaN, rawEst: NaN, saved: NaN }) });
-		results.runs.push({ scenario: sc.id, variant, ok, answer: answer.slice(0, 400) });
-		console.log(`${sc.id} ${variant}: ok=${ok} input=${m?.input ?? "?"} rawEst=${m?.rawEst ?? "?"} saved=${m?.saved ?? "?"}`);
+		results.runs.push({ scenario: sc.id, rep, variant, ok, answer: answer.slice(0, 400) });
+		console.log(`r${rep} ${sc.id} ${variant}: ok=${ok} input=${m?.input ?? "?"} rawEst=${m?.rawEst ?? "?"} saved=${m?.saved ?? "?"}`);
+	}
+}
+}
+
+// aggregate: per scenario, median input + solved rate per variant
+console.log("\n=== PER-SCENARIO (median over reps) ===");
+for (const sc of SCENARIOS) {
+	for (const variant of ["baseline", "extension"]) {
+		const rs = rows.filter((r) => r.scenario === sc.id && r.variant === variant && Number.isFinite(r.input));
+		const inputs = rs.map((r) => r.input).sort((a, b) => a - b);
+		const med = inputs.length ? inputs[Math.floor(inputs.length / 2)] : NaN;
+		const okN = rs.filter((r) => r.ok).length;
+		console.log(`${sc.id} ${variant}: solved ${okN}/${rs.length}, median input ${med.toLocaleString()}`);
 	}
 }
 

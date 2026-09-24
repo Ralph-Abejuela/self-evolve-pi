@@ -30,7 +30,12 @@ export function textOf(content: Array<{ type: string; text?: string }>): string 
 		.join("\n");
 }
 
-const ARCHIVED_TOOLS = new Set(["pwsh", "bash", "powershell", "read", "grep", "find", "edit", "write"]);
+// ponytail: 'read' is excluded — a single intentional file read is usually the payload
+// itself; packing it only adds recall turns (measured on the needle test). Long-horizon
+// bloat comes from repeated shell output, which the reducer + pack cover. Re-enable
+// via config if a workflow does huge reads.
+const ARCHIVED_TOOLS = new Set(["pwsh", "bash", "powershell", "grep", "find", "edit", "write"]);
+const SHELL_TOOLS = new Set(["pwsh", "bash", "powershell"]);
 
 export function registerPack(
 	pi: ExtensionAPI,
@@ -47,24 +52,26 @@ export function registerPack(
 		const t = tok(text.length);
 
 		// reducer first: deterministic filter with verbatim quote validation
-		if (cfg.reducer && (toolName === "pwsh" || toolName === "bash" || toolName === "powershell")) {
+		if (cfg.reducer && SHELL_TOOLS.has(toolName)) {
 			const red = reduceLog(text);
-				if (red) {
-					const handle = store.write(toolName, text);
-					counters.reducedCount++;
-					counters.tokensSavedEst += Math.max(0, t - tok(red.receipt.length));
-					return {
-						content: [
-							{
-								type: "text",
-								text: `${red.receipt}\n[This receipt is the COMPLETE failure evidence from the log; act on it directly. ` +
-									`Full log archived: ${handle}. Do NOT page the archive with harness_recall unless you specifically ` +
-									`need surrounding context for one quoted line.]`,
-							},
-						],
-						details: event.details,
-					};
-				}
+			if (red) {
+				const handle = store.write(toolName, text);
+				counters.reducedCount++;
+				counters.tokensSavedEst += Math.max(0, t - tok(red.receipt.length));
+				return {
+					content: [
+						{
+							type: "text",
+							text:
+								`${red.receipt}\n` +
+								`[This receipt is the COMPLETE failure evidence from the log; act on it directly. ` +
+								`Full log archived: ${handle}. Do NOT page the archive with harness_recall unless you ` +
+								`specifically need surrounding context for one quoted line.]`,
+						},
+					],
+					details: event.details,
+				};
+			}
 		}
 
 		// pack: oversized output -> excerpt + handle, raw to L3
@@ -79,15 +86,13 @@ export function registerPack(
 				content: [
 					{
 						type: "text",
-							text:
-								`[${handle}] ${t} tok archived to disk. Excerpt (head/tail):\n` +
-								`---HEAD---\n${head}\n...[snip ${text.length - 2 * cfg.excerptChars} chars]...\n` +
-								`---TAIL---\n${tail}\n---\n` +
-								`Answer from the excerpt when it suffices; page selectively with harness_recall("${handle}", page) ` +
-								`(0..${pages - 1}, ${PAGE_CHARS} chars each) only for specific missing details.`,
-						},
-					],
-						details: event.details,
+						text:
+							`[${handle}] ${t} tok archived to disk. Excerpt (head/tail):\n` +
+							`---HEAD---\n${head}\n...[snip ${text.length - 2 * cfg.excerptChars} chars]...\n` +
+							`---TAIL---\n${tail}\n---\n` +
+							`Answer from the excerpt when it suffices; page selectively with ` +
+							`harness_recall("${handle}", page) (0..${pages - 1}, ${PAGE_CHARS} chars each) ` +
+							`only for specific missing details.`,
 					},
 				],
 				details: event.details,
@@ -101,7 +106,8 @@ export function registerPack(
 		label: "harness recall",
 		description:
 			"Read one page of an archived tool output by handle (e.g. 'se://3'). " +
-			"Handles appear in '[se://N] ... archived to disk' notices. Pages are 800 chars; start at page 0.",
+			"Handles appear in '[se://N] ... archived to disk' notices. Pages are 800 chars; start at page 0. " +
+			"Page selectively: receipts and excerpts already carry the key evidence.",
 		parameters: Type.Object({
 			handle: Type.String({ description: "Archive handle, e.g. se://3" }),
 			page: Type.Number({ description: "Zero-based page index", minimum: 0 }),

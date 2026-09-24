@@ -28,7 +28,7 @@ Or copy the `self-evolve/` directory into `~/.pi/agent/extensions/`.
 
 This was tested against a pi environment with 15 packages. Two clusters collide. Skills do not collide (prompt-level only, no shared namespace).
 
-**1. Output-compaction extensions (RTK-style `@xynogen/pix-optimizer`) — real collision. Do not double-wrap.**
+**1. Output-compaction extensions (RTK, https://github.com/rtk-ai/rtk) — real collision. Do not double-wrap.**
 Both extensions intercept the same `tool_result` events for the same tools (`pwsh`/`bash`). Three failure modes when both are on:
 - *Double truncation.* RTK truncates at its `maxChars` limit. If RTK runs after this extension, it can clip the `se://N` handle block. The result is a pointer to nothing.
 - *Bad evidence.* The reducer builds receipts from shell output. If RTK truncated that output first, the receipt silently records lossy text as evidence.
@@ -36,10 +36,7 @@ Both extensions intercept the same `tool_result` events for the same tools (`pws
 
 Rule: give the shell-output layer to one owner. Either set RTK `outputCompaction.enabled: false` (this extension is lossless: archive + recall, not truncation), or set `ARCHIVED_TOOLS` here to exclude the tools RTK owns.
 
-**2. Memory extensions (`pi-hermes-memory`, `pi-mnemosyne`) — partial overlap. Keep telemetry-only.**
-Those two do the same job (persistent memory + session indexing + auto-consolidation). This extension does NOT add a third memory writer. `telemetry.ts` keeps in-memory counters only. `store.ts` writes per-session evidence to `.self-evolve/`, not to a shared memory store. If you add memory features here, scope them to session evidence, not durable memory.
-
-**3. Prompt-stack budget.** `APPEND_SYSTEM.md` + two memory recall contexts + this extension's ~80-token guideline sit on the system side. Measure any new injection against the ~23.4k global-extension floor.
+**2. Prompt-stack budget.** `APPEND_SYSTEM.md` + two memory recall contexts + this extension's ~80-token guideline sit on the system side. Measure any new injection against the ~23.4k global-extension floor.
 
 ## Measured results (n=3 per cell, median context tokens = provider input + cacheRead, independent A/B)
 
@@ -90,6 +87,15 @@ Full job results (every trial's trajectory, logs, verifier output) are public on
 
 - Baseline arm: https://hub.harborframework.com/jobs/b0a875eb-4b90-4acd-a27c-9b6e1dca83d8
 - Extension arm: https://hub.harborframework.com/jobs/cfa8a1d8-6f8b-44d0-a371-0172225fb9ec
+
+## Research papers
+
+This extension follows two research papers. They are named here as in the project spec (`docs/specs/0001-extension-stack-and-architecture.md`):
+
+- **Evidence-preserving reduction with verbatim quote validation** — from the SoL-Pi paper summary. Source of the evidence reducer: keep FAIL/ERROR/summary lines as a receipt; check each kept quote word-for-word against the saved log.
+- **Tiered context management** — from the Prime Agent paper summary. Source of the L1 active window / L3 disk-backed archive split (ObservationPack + `harness_recall`).
+
+No public URLs are on record for these papers in this project's spec. They are named here as in the spec (`docs/specs/0001-extension-stack-and-architecture.md`, References).
 
 ## Potential edge (what the results suggest — not proven at this sample size)
 

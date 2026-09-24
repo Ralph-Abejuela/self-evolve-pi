@@ -3,3 +3,7 @@ node_modules/
 results/
 
 __pycache__/
+
+jobs-smoke/
+jobs-tb21-baseline/
+jobs-tb21-ext/

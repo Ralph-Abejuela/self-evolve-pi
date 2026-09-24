@@ -49,20 +49,22 @@ export function registerPack(
 		// reducer first: deterministic filter with verbatim quote validation
 		if (cfg.reducer && (toolName === "pwsh" || toolName === "bash" || toolName === "powershell")) {
 			const red = reduceLog(text);
-			if (red) {
-				const handle = store.write(toolName, text);
-				counters.reducedCount++;
-				counters.tokensSavedEst += Math.max(0, t - tok(red.receipt.length));
-				return {
-					content: [
-						{
-							type: "text",
-							text: `${red.receipt}\n[full log archived: ${handle}; harness_recall(handle, page) reads pages 0..${Math.ceil(text.length / PAGE_CHARS) - 1}]`,
-						},
-					],
-					details: event.details,
-				};
-			}
+				if (red) {
+					const handle = store.write(toolName, text);
+					counters.reducedCount++;
+					counters.tokensSavedEst += Math.max(0, t - tok(red.receipt.length));
+					return {
+						content: [
+							{
+								type: "text",
+								text: `${red.receipt}\n[This receipt is the COMPLETE failure evidence from the log; act on it directly. ` +
+									`Full log archived: ${handle}. Do NOT page the archive with harness_recall unless you specifically ` +
+									`need surrounding context for one quoted line.]`,
+							},
+						],
+						details: event.details,
+					};
+				}
 		}
 
 		// pack: oversized output -> excerpt + handle, raw to L3
@@ -77,11 +79,15 @@ export function registerPack(
 				content: [
 					{
 						type: "text",
-						text:
-							`[${handle}] ${t} tok archived to disk. Excerpt (head/tail):\n` +
-							`---HEAD---\n${head}\n...[snip ${text.length - 2 * cfg.excerptChars} chars]...\n` +
-							`---TAIL---\n${tail}\n---\n` +
-							`harness_recall("${handle}", page) reads pages 0..${pages - 1} (${PAGE_CHARS} chars each).`,
+							text:
+								`[${handle}] ${t} tok archived to disk. Excerpt (head/tail):\n` +
+								`---HEAD---\n${head}\n...[snip ${text.length - 2 * cfg.excerptChars} chars]...\n` +
+								`---TAIL---\n${tail}\n---\n` +
+								`Answer from the excerpt when it suffices; page selectively with harness_recall("${handle}", page) ` +
+								`(0..${pages - 1}, ${PAGE_CHARS} chars each) only for specific missing details.`,
+						},
+					],
+						details: event.details,
 					},
 				],
 				details: event.details,

@@ -8,7 +8,8 @@ const ROOT = "C:\\Users\\user\\Documents\\Git-Clones\\self-evolve-pi";
 const FIXTURE = join(ROOT, "test-fixture");
 const SESSIONS = "C:\\Users\\user\\.pi\\agent\\sessions";
 const EXT = join(ROOT, "self-evolve", "index.ts");
-const PROJ_DIR_NAME = "--C--Users-user-Documents-Git-Clones-self-evolve-pi--";
+// pi runs with cwd=test-fixture, so its sessions land in a project dir that includes the fixture name
+const PROJ_DIR_MATCH = (d) => d.includes("self-evolve-pi") && d.includes("test-fixture");
 
 function buildNeedle(blocks = 120, at = 0.5) {
 	const needlePos = Math.floor(blocks * at);
@@ -41,9 +42,8 @@ const SCENARIOS = [
 ];
 
 function newestSession() {
-	const dir = join(SESSIONS, PROJ_DIR_NAME);
-	if (!existsSync(dir)) return null;
-	const files = readdirSync(dir).filter((f) => f.endsWith(".jsonl")).map((f) => join(dir, f));
+	const dirs = readdirSync(SESSIONS).filter(PROJ_DIR_MATCH).map((d) => join(SESSIONS, d));
+	const files = dirs.flatMap((dir) => readdirSync(dir).filter((f) => f.endsWith(".jsonl")).map((f) => join(dir, f)));
 	files.sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs);
 	return files[0] ?? null;
 }
@@ -64,7 +64,8 @@ function tokensFromSession(file) {
 }
 
 function telemetryTokens(label) {
-	const f = join(ROOT, ".self-evolve", `telemetry-${label}.jsonl`);
+	// the extension resolves state against its own process.cwd(), which is the fixture dir
+	const f = join(FIXTURE, ".self-evolve", `telemetry-${label}.jsonl`);
 	if (!existsSync(f)) return null;
 	let input = 0, output = 0, rawEst = 0, saved = 0;
 	for (const line of readFileSync(f, "utf-8").split("\n")) {

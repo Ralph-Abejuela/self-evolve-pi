@@ -17,7 +17,7 @@ export const DEFAULTS: HarnessConfig = {
 	reducer: true,
 	compact: true,
 	fusion: true,
-	packThresholdTokens: 2500,
+	packThresholdTokens: 2560, // ~10 KiB, matching the SoL-Pi paper threshold
 	excerptChars: 1200,
 	pressureTokens: 12000,
 };

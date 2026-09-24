@@ -11,12 +11,12 @@ _These are recommendations to keep your build orderly, not requirements. Skip an
 
 | # | Feature | Phase | Status |
 |---|---------|-------|--------|
-| 1 | Stack & architecture | Foundation | planned |
-| 2 | ObservationPack & paged recall | Slice 1 | planned |
-| 3 | Evidence preserving reducer | Slice 2 | planned |
-| 4 | BPE cognitive tools & context compact | Slice 3 | planned |
-| 5 | Action fusion chaining & /evolve control | Slice 4 | planned |
-| 6 | Comparison harness & telemetry | Slice 5 | planned |
+| 1 | Stack & architecture | Foundation | done |
+| 2 | ObservationPack & paged recall | Slice 1 | done |
+| 3 | Evidence preserving reducer | Slice 2 | done |
+| 4 | BPE cognitive tools & context compact | Slice 3 | done |
+| 5 | Action fusion chaining & /evolve control | Slice 4 | done |
+| 6 | Comparison harness & telemetry | Slice 5 | done |
 
 ## Foundations
 
@@ -28,7 +28,7 @@ Decide the extension structure (single file vs directory, module layout, state s
    - [ ] Scaffold directory extension with index.ts, module stubs, config loader
    - [ ] /evolve command reports state and toggles config
    - [ ] Extension loads in pi without errors
-Spec 0001 · code (filled by /develop)
+Spec 0001 · code in `self-evolve/`
 
 ## Slice 1: ObservationPack & paged recall
 

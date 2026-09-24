@@ -44,16 +44,18 @@ the headline metric; provider-reported usage is.
 | test5-code | 101,857 | 101,280 | +0.6% | 3/3 both |
 | **Total** | **328,349** | **332,743** | **−1.3%** | base 10/15, ext 12/15 |
 
-Single-shot tasks are within noise of parity (the ~1k delta is the harness's fixed
-tool-schema + guideline overhead). Correctness differences (10 vs 12 of 15) are inside
+An independent second n=3 suite replicated the pattern: 5-test totals 348,583 vs 332,364
+(+4.7% in the extension's favor), correctness 10/15 vs 13/15, triage 344,781 vs 175,072
+(−49.2%). Single-shot tasks sit within ±5% of parity across both suites (the ~1k delta is
+the harness's fixed tool-schema + guideline overhead); correctness differences are inside
 run-to-run variance for this model — the harness neither helps nor hurts single-shot QA.
 
 ### The agentic scenario (triage: run noisy 20 KB log emitter, fix two failing specs, verify)
 
 | | Baseline | Extension | Reduction |
 |---|---|---|---|
-| median context | 363,751 | 178,063 | **51.0%** |
-| solved | 3/3 | 3/3 | parity |
+| median context (suite 1 / suite 2) | 363,751 / 344,781 | 178,063 / 175,072 | **51.0% / 49.2%** |
+| solved | 3/3 both suites | 3/3 both suites | parity |
 
 This is the regime the paper targets: long-horizon agentic loops where the same large,
 noisy tool output keeps being re-billed every turn.
@@ -62,11 +64,11 @@ noisy tool output keeps being re-billed every turn.
 
 | Mechanism | Evidence |
 |---|---|
-| Evidence-preserving reducer | `reducedCount=18` across the 3 triage runs (5–7 each); receipts carried verbatim FAIL quotes |
-| ObservationPack | `packedCount=2` (two outputs over the 10 KiB threshold archived to L3 with `se://N` handles) |
-| BPE cognitive tools | `bpeCalls=30` across triage runs (8–12 each; `harness_commit` after each subtask as instructed) |
-| Action fusion | `fusionCount=1` in the dedicated fusion-demo rerun (`telemetry-fusion-debug.jsonl`); the continuation's verify-nudge was followed and the model's final report cites the "post-edit directive". In the runner's demo cell the agent verified in-flow, so the guard correctly stayed silent (fusionCount=0) |
-| Online context compact | `compactedCount=0` — no scenario reached window pressure; the mechanism is implemented (archive+marker on the `context` event, threshold `pressureTokens`) but not exercised by this suite |
+| Evidence-preserving reducer | `reducedCount=2` in each measured triage extension run; receipts carry verbatim FAIL quotes validated against the archived log |
+| ObservationPack | `packedCount=1` in measured triage runs (output over the 10 KiB threshold archived to L3 with an `se://N` handle) |
+| BPE cognitive tools | `bpeCalls=2–4` per measured triage run (`harness_commit` after each subtask as instructed) |
+| Action fusion | `fusionCount=1` in the dedicated fusion-demo rerun (`results/fusion-debug-telemetry.jsonl`); the continuation's verify-nudge was followed and the model's final report cites the "post-edit directive". In the runner's demo cell the agent verified in-flow, so the guard correctly stayed silent (fusionCount=0) |
+| Online context compact | `compactedCount=0` in the suite — window pressure was reached but no large droppable candidates remained (pi's shell tool pre-truncates and the reducer shrinks the rest). Verified functional under forced conditions: 5 inline ~1.9k-token tool results → `compactedCount=2, savedEst=3770` |
 
 Key measurement findings:
 1. **The comparison floor matters**: an early iteration compared extension-loaded pi against

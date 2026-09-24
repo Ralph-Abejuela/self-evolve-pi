@@ -8,12 +8,13 @@
  */
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import type { HarnessConfig } from "./config.js";
+import type { Counters } from "./pack.js";
 
 const EDIT_TOOLS = new Set(["edit", "write", "multi-edit"]);
 const VERIFY_TOOLS = new Set(["pwsh", "bash", "powershell"]);
 const MAX_CONTINUATIONS = 2;
 
-export function registerFusion(pi: ExtensionAPI, getCfg: () => HarnessConfig): void {
+export function registerFusion(pi: ExtensionAPI, getCfg: () => HarnessConfig, counters: Counters): void {
 	let seq = 0;
 	let lastEditSeq = -1;
 	let lastVerifySeq = -1;
@@ -40,6 +41,7 @@ export function registerFusion(pi: ExtensionAPI, getCfg: () => HarnessConfig): v
 		if (lastEditSeq < 0 || lastVerifySeq >= lastEditSeq) return undefined;
 		if (continuations >= MAX_CONTINUATIONS) return undefined;
 		continuations++;
+		counters.fusionCount++;
 		lastVerifySeq = seq; // do not re-fire for the same edit
 		return {
 			entries: [

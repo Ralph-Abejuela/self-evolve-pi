@@ -19,7 +19,7 @@ export const DEFAULTS: HarnessConfig = {
 	fusion: true,
 	packThresholdTokens: 2560, // ~10 KiB, matching the SoL-Pi paper threshold
 	excerptChars: 1200,
-	pressureTokens: 12000,
+	pressureTokens: 6000, // tuned: pi system prompt + tool defs already consume ~4-5k
 };
 
 export const MECHANISMS = ["pack", "reducer", "compact", "fusion"] as const;

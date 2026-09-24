@@ -1,0 +1,1 @@
+Run: node emit-log.js — it prints a large test log. Then fix the failing specs by editing src/auth.js and src/billing.js in this directory (replace each TODO-BUG marker with the correct value: quota_refresh for auth, plan for billing), then run the log emitter again to verify both specs now pass. Use harness_commit after each completed subtask. Report what you fixed.

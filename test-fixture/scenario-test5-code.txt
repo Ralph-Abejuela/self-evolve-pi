@@ -1,0 +1,25 @@
+Write a three-file Python 3.11 solution. File names, function names, and identifier conventions are MANDATORY and case-sensitive. Any deviation = failure.
+
+NAMING CONVENTIONS (all three files):
+- Module-level constants MUST be prefixed with zz_ (e.g. zz_LIMIT).
+- Every function PARAMETER must be suffixed with _rx7 (e.g. items_rx7).
+- No other identifier may contain zz_ or end with _rx7 (this includes function names, local variables, class names).
+
+FILE 1 — alpha.py
+- Define zz_MAX_DEPTH = 6 and zz_ALPHABET = "zyxwvutsrqponmlkjihgfedcba".
+- Define encode_token(token_rx7: str) -> str: lowercase token_rx7, then replace each ASCII letter with its reversed-alphabet counterpart (a<->z, b<->y, ...). Leave non-letters unchanged.
+
+FILE 2 — beta.py
+- Import from alpha: encode_token, zz_MAX_DEPTH.
+- Define chunk_tokens(tokens_rx7: list[str], size_rx7: int = zz_MAX_DEPTH) -> list[list[str]]: split tokens_rx7 into consecutive chunks of length size_rx7 (final chunk may be shorter).
+
+FILE 3 — gamma.py
+- Import encode_token from alpha and chunk_tokens from beta.
+- Define run_suite() -> None which:
+  * asserts encode_token("Alpha") == "zoksz"
+  * asserts encode_token("gamma-9") == "tznnz-9"
+  * asserts chunk_tokens(["zoksz", "yvgz", "tznnz-9"]) == [["zoksz", "yvgz", "tznnz-9"]]
+  * on success prints exactly: SUITE_OK  (no other output, ever)
+- End with an if __name__ == "__main__": block that calls run_suite().
+
+HARD CONSTRAINTS: Do NOT use eval, exec, f-strings, or the walrus operator. Do NOT add any third-party imports. Do NOT rename anything.

@@ -21,6 +21,8 @@ export interface Counters {
 	reducedCount: number;
 	compactedCount: number;
 	tokensSavedEst: number;
+	fusionCount: number;
+	bpeCalls: number;
 }
 
 export function textOf(content: Array<{ type: string; text?: string }>): string {

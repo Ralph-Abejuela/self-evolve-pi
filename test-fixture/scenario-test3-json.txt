@@ -1,0 +1,20 @@
+Output ONLY a single JSON object — no markdown fences, no preamble, no trailing text, no comments — matching ALL rules below. Any deviation is a failure.
+
+Schema (exact keys, exact top-level order):
+{
+  "metaData": { ... },
+  "proof_steps": [ ... ],
+  "checksum": <integer>,
+  "validation_regex": "^RTK-[0-9]{4}-[A-Z]{2}$"
+}
+
+Rules:
+1. "metaData" is an object with keys in this exact order:
+   - "test_id": string that MUST match validation_regex. Use "RTK-4471-QA".
+   - "run_index": the integer 7.
+   - "tags": array of exactly 3 lowercase strings, sorted alphabetically:
+     ["alpha", "jules", "verne"].
+2. "proof_steps": an array of exactly 4 strings proving by induction that for all integers n >= 1, sum_{k=1}^{n} k = n(n+1)/2. The strings must begin with these exact labels followed by ": " — "BASE", "HYPOTHESIS", "INDUCTIVE_STEP", "CONCLUSION".
+3. "checksum": an integer equal to (the digits of test_id) + run_index + (total character count of the three tags concatenated). Output only the integer.
+4. "validation_regex": reproduce the literal pattern string shown in the schema, exactly.
+5. Key names are case-sensitive ("metaData" has a capital D; all other keys are snake_case). No additional keys. No trailing commas. 2-space indentation.

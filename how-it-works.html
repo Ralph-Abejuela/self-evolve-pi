@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>self-evolve-pi — How the Extension Works</title>
+<style>
+  :root {
+    --bg: #0d1117; --panel: #161b22; --border: #30363d; --text: #c9d1d9;
+    --dim: #8b949e; --accent: #58a6ff; --green: #3fb950; --red: #f85149;
+    --yellow: #d29922; --purple: #bc8cff; --mono: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font: 15px/1.6 -apple-system, 'Segoe UI', sans-serif; padding: 0 0 80px; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 0 24px; }
+  header { border-bottom: 1px solid var(--border); padding: 40px 0 28px; margin-bottom: 32px; }
+  h1 { font-size: 28px; color: var(--accent); }
+  h1 code { font-family: var(--mono); }
+  .tagline { color: var(--dim); margin-top: 8px; max-width: 720px; }
+  h2 { font-size: 20px; margin: 44px 0 12px; color: #e6edf3; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+  h3 { font-size: 15px; margin: 18px 0 8px; color: var(--accent); }
+  p { margin: 10px 0; max-width: 760px; }
+  code { font-family: var(--mono); background: #21262d; padding: 1px 5px; border-radius: 4px; font-size: 13px; }
+  pre { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 14px; overflow-x: auto; font-family: var(--mono); font-size: 12.5px; line-height: 1.55; margin: 12px 0; }
+  pre b.k { color: #ff7b72; } pre b.s { color: #a5d6ff; } pre b.f { color: #d2a8ff; } pre b.c { color: #8b949e; font-style: italic; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 18px; margin: 14px 0; }
+  .flow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 16px 0; font-family: var(--mono); font-size: 12.5px; }
+  .node { border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; background: #1c2128; }
+  .node b { display: block; font-size: 12px; }
+  .node small { color: var(--dim); }
+  .arrow { color: var(--dim); }
+  .node.fire { border-color: var(--green); box-shadow: 0 0 8px rgba(63,185,80,.25); }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 13.5px; }
+  th, td { border: 1px solid var(--border); padding: 7px 10px; text-align: left; }
+  th { background: #1c2128; color: #e6edf3; }
+  .good { color: var(--green); } .bad { color: var(--red); } .warn { color: var(--yellow); }
+  button { background: #21262d; color: var(--accent); border: 1px solid var(--border); border-radius: 6px; padding: 7px 16px; cursor: pointer; font-size: 13px; margin: 4px 6px 4px 0; }
+  button:hover { background: #30363d; }
+  .demo-out { font-family: var(--mono); font-size: 12.5px; background: #0a0d12; border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-top: 10px; white-space: pre-wrap; max-height: 340px; overflow-y: auto; }
+  .pill { display: inline-block; border-radius: 20px; padding: 1px 10px; font-size: 11.5px; border: 1px solid var(--border); margin-right: 6px; }
+  .meter { height: 14px; background: #21262d; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin: 8px 0; }
+  .meter > div { height: 100%; background: linear-gradient(90deg, var(--green), var(--yellow) 70%, var(--red)); transition: width .6s; }
+  .step { opacity: .25; transition: opacity .4s; border-left: 2px solid var(--border); padding: 6px 0 6px 14px; margin: 8px 0; }
+  .step.on { opacity: 1; border-left-color: var(--accent); }
+  .step.on.fired { border-left-color: var(--green); }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
+  .toc a { color: var(--accent); text-decoration: none; margin-right: 18px; font-size: 13.5px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1><code>self-evolve-pi</code> — how the harness works</h1>
+  <p class="tagline">A pi extension that keeps an LLM agent's context small <em>without losing information</em>, by borrowing
+  five mechanisms from the self-evolving-agent-harness literature (SoL-Pi style). This page teaches each mechanism,
+  where it hooks into pi, and what the measurements showed.</p>
+  <p class="toc" style="margin-top:14px">
+    <a href="#problem">1 · The problem</a>
+    <a href="#pipeline">2 · Event pipeline</a>
+    <a href="#mechs">3 · The five mechanisms</a>
+    <a href="#measure">4 · What was measured</a>
+    <a href="#files">5 · File map</a>
+  </p>
+</header>
+
+<!-- ================= 1. PROBLEM ================= -->
+<h2 id="problem">1 · The problem: context re-billing</h2>
+<p>Every agent turn re-sends the whole conversation to the model. A 20&nbsp;KB shell log read at turn 2 is
+billed again at turn 3, 4, 5… An agentic task with 30 turns can pay for that log 30 times. The harness's job is to
+make the <em>context</em> small while keeping the <em>information</em> reachable.</p>
+<div class="card">
+  <b>Live illustration</b> — one 2,560-token log, N turns, no harness:
+  <div class="meter"><div id="bleedBar" style="width:8%"></div></div>
+  <div id="bleedText" style="font-family:var(--mono); font-size:12.5px"></div>
+  <button onclick="bleed(1)">1 turn</button><button onclick="bleed(5)">5 turns</button>
+  <button onclick="bleed(15)">15 turns</button><button onclick="bleed(30)">30 turns</button>
+</div>
+<p>Two escape hatches exist, and the literature ranks them: <b>deterministic elision</b> (a rule shrinks the text,
+provably keeping what matters) beats <b>recoverable recall</b> (keep a pointer, let the model page the data back),
+because recall turns re-bill context too. The extension implements both, elision first.</p>
+
+<!-- ================= 2. PIPELINE ================= -->
+<h2 id="pipeline">2 · Where it hooks into pi</h2>
+<p>pi fires lifecycle events. The extension registers handlers on five of them plus six custom tools.
+No model weights are touched — this is all runtime scaffolding (the "training-free" half of the paper).</p>
+<pre>
+<b class="k">pi.on</b>(<b class="s">"tool_result"</b>)        <span class="c">// every tool output passes through here</span>
+  ├─ <b class="f">reduceLog()</b>            <span class="c">// shell logs → verified receipt   (mechanism 1)</span>
+  └─ <b class="f">pack()</b>                 <span class="c">// &gt;10 KiB output → L3 disk + excerpt (mechanism 2)</span>
+
+<b class="k">pi.on</b>(<b class="s">"context"</b>)            <span class="c">// fired when the window fills up</span>
+  └─ <b class="f">compact()</b>              <span class="c">// archive old tool results → markers (mechanism 3)</span>
+
+<b class="k">pi.on</b>(<b class="s">"agent_before_settle"</b>) <span class="c">// the turn is about to end</span>
+  └─ <b class="f">fusion()</b>               <span class="c">// edit landed unverified? chain one continuation (mechanism 4)</span>
+
+<b class="k">pi.on</b>(<b class="s">"before_agent_start"</b>)  <span class="c">// each agent run starts</span>
+  └─ guideline              <span class="c">// ~80 tokens teaching the BPE tool syntax</span>
+
+<b class="k">pi.registerTool</b>() × 5       <span class="c">// harness_recall, harness_commit/track/note/state (mechanism 5)</span>
+<b class="k">pi.registerCommand</b>(<b class="s">"/evolve"</b>) <span class="c">// toggle mechanisms, read counters</span>
+</pre>
+<p>State lives in <code>.self-evolve/</code>: <code>config.json</code> (toggles), the L3 archive
+(<code>se://1</code>, <code>se://2</code>… + <code>index.jsonl</code>), and per-run telemetry JSONL.</p>
+
+<!-- ================= 3. MECHANISMS ================= -->
+<h2 id="mechs">3 · The five mechanisms</h2>
+
+<h3>3.1 — Evidence-preserving reducer <span class="pill" style="color:var(--green)">elision</span></h3>
+<p>Shell output is mostly noise. A deterministic filter keeps the diagnostic lines
+(<code>FAIL</code>, <code>ERROR</code>, the <code>summary:</code> line) as a small <b>receipt</b>.
+The safety property: <b>every quoted line is validated verbatim against the archived original</b> — if the filter
+invents or mangles a line, the receipt is rejected and the full text is kept. The receipt also declares itself
+complete evidence, so the model doesn't page the archive "just to check" (an early version lost 32% of its savings
+to exactly that behavior).</p>
+<div class="card">
+  <b>Try it</b> — a noisy 50-line test log goes in; watch the filter run:
+  <button onclick="runReducer()">run filter</button>
+  <div class="demo-out" id="redOut">click "run filter"…</div>
+</div>
+
+<h3>3.2 — ObservationPack (L1 / L3 tiers + paged recall) <span class="pill" style="color:var(--yellow)">recall</span></h3>
+<p>Any tool output over the threshold (2,560 tok ≈ 10 KiB, the paper's number) is written to the L3 disk archive.
+The context keeps only a head/tail excerpt and a handle (<code>se://7</code>). The model can read the full text back
+in pages with <code>harness_recall(handle, page)</code> — paying only for the pages it needs.
+<code>read</code> is excluded by default: packing a one-time intentional file read just adds recall turns (measured).</p>
+<div class="card">
+  <b>Try it</b> — threshold slider decides pack vs inline:
+  <input type="range" id="thr" min="500" max="6000" step="100" value="2560" oninput="packDemo()" style="width:220px; vertical-align:middle">
+  <code id="thrVal"></code>
+  <div class="demo-out" id="packOut"></div>
+</div>
+
+<h3>3.3 — Online context compact <span class="pill" style="color:var(--purple)">pressure</span></h3>
+<p>When estimated L1 tokens pass <code>pressureTokens</code>, old tool results (&gt;400 tok, not from the current
+turn) are archived to L3 and replaced by one-line markers. Completed subgoals become compaction candidates —
+which is why the BPE <code>harness_commit</code> tool matters: committing a subtask marks its evidence as safe to
+shrink.</p>
+<pre>
+<span class="c">// on the "context" event, when estTokens > pressureTokens:</span>
+<span class="k">for</span> old tool results (age &gt; current turn, tokens &gt; 400):
+    handle = store.write(<b class="s">"compacted"</b>, text)
+    replace message text with
+      <b class="s">`[compacted ${handle}: ${t} tok archived; harness_recall(handle, page) to recover]`</b>
+</pre>
+<p><b>Honest note:</b> this never fired in the test suite — pi's own shell tool already truncates big outputs and the
+reducer shrinks the rest, so no droppable candidates remained. It was verified working under forced conditions
+(5 × 1.9k inline results → <code>compacted=2, saved≈3,770</code>).</p>
+
+<h3>3.4 — Action fusion <span class="pill" style="color:var(--accent)">turn-boundary</span></h3>
+<p>The paper's fusion bundles an edit and its verification into one model request. An extension can't force the model
+to batch, but it can catch the failure mode at the turn boundary: if an <code>edit/write</code> landed and
+<b>no</b> <code>pwsh/bash</code> ran afterwards, <code>agent_before_settle</code> injects one bounded continuation
+(max 2 per run): <i>"an edit landed without verification — run the check now."</i> Zero extra user round-trips.</p>
+<div class="card">
+  <b>Turn timeline</b> — click through a run where the model edits and stops:
+  <button onclick="fusionStep()">next event →</button>
+  <div id="fusionSteps">
+    <div class="step" data-s="0"><code>tool_result edit</code> → lastEditSeq = 1</div>
+    <div class="step" data-s="1"><code>assistant: "done, changed retries to 5"</code> — turn wants to end…</div>
+    <div class="step" data-s="2"><code>agent_before_settle</code> → guard: lastEditSeq=1, lastVerifySeq=-1 ⇒ <b style="color:var(--green)">FIRE</b></div>
+    <div class="step" data-s="3">inject <code>custom_message [action fusion]</code> + <code>continue: true</code> — no user round-trip</div>
+    <div class="step" data-s="4"><code>tool_result pwsh</code> (model verifies) → lastVerifySeq = 2 → settle clean ✔</div>
+  </div>
+</div>
+
+<h3>3.5 — BPE slots: belief / progress / experience <span class="pill" style="color:var(--red)">durable state</span></h3>
+<p>Four tiny tools keep structured state <em>out</em> of the context, persisted with <code>pi.appendEntry</code>
+(durable session entries):</p>
+<table>
+  <tr><th>Tool</th><th>Slot</th><th>What the model stores</th></tr>
+  <tr><td><code>harness_commit</code></td><td>progress</td><td>"subtask X done" — also marks evidence compactable</td></tr>
+  <tr><td><code>harness_track</code></td><td>belief</td><td>environment facts: paths, ports, versions</td></tr>
+  <tr><td><code>harness_note</code></td><td>experience</td><td>reusable lessons ("the emitter must run from fixture cwd")</td></tr>
+  <tr><td><code>harness_state</code></td><td>read-back</td><td>recover all slots cheaply after compaction/resume</td></tr>
+</table>
+<p>Because the model won't discover these tools unprompted, a ~80-token guideline is injected at
+<code>before_agent_start</code> — the training-free stand-in for the paper's SFT stage. It worked: 2–4 BPE calls per
+measured triage run.</p>
+
+<!-- ================= 4. MEASUREMENT ================= -->
+<h2 id="measure">4 · What was measured (and the trap found on the way)</h2>
+<div class="card" style="border-color:var(--red)">
+  <b style="color:var(--red)">The measurement trap.</b> The first comparison used <code>pi -ns -ne -nc</code>
+  (no skills / extensions / context) as baseline: a stripped pi with a <b>2.8k-token</b> system floor. Any
+  <code>--extension</code> run carries pi's <b>~23.4k</b> global-extension floor. Result: a bogus
+  <b>−113.9% "reduction"</b> that was pure environment asymmetry. Fair baseline = default <code>pi -ns</code>.
+  <b>Always give both arms the same floor.</b>
+</div>
+<p>Final methodology: independent A/B, both variants measured identically from their own session files
+(provider-reported <code>input + cacheRead</code> = context, summed per request), n=3 per cell, medians,
+two replication suites.</p>
+<table>
+  <tr><th>Suite</th><th>Baseline ctx</th><th>Extension ctx</th><th>Δ</th><th>Correct</th></tr>
+  <tr><td><b>Agentic triage</b> (run noisy 20&nbsp;KB log, fix 2 specs, verify) ×2 suites</td>
+      <td>363,751 / 344,781</td><td>178,063 / 175,072</td>
+      <td class="good"><b>−51.0% / −49.2%</b></td><td>3/3 both</td></tr>
+  <tr><td>5 verbatim adversarial single-shot tests ×2 suites</td>
+      <td>328,349 / 348,583</td><td>332,743 / 332,364</td>
+      <td class="warn">−1.3% / +4.7% (parity)</td><td>10 vs 12, 10 vs 13 of 15</td></tr>
+</table>
+<p><b>Reading:</b> the harness pays a small fixed overhead (~1k: tool schemas + guideline) that shows on single-shot
+QA, and pays for itself ~2× on long agentic loops where the same big noisy output would be re-billed every turn —
+exactly the regime the paper targets. Evidence-preserving elision (reducer) drove the win; agent-behavior variance at
+n=3 is large, hence medians + replication.</p>
+
+<!-- ================= 5. FILES ================= -->
+<h2 id="files">5 · File map</h2>
+<table>
+  <tr><th>File</th><th>Role</th></tr>
+  <tr><td><code>self-evolve/index.ts</code></td><td>wiring + <code>/evolve</code> command + guideline injection</td></tr>
+  <tr><td><code>self-evolve/config.ts</code></td><td>mechanism toggles + thresholds, persisted to <code>.self-evolve/config.json</code></td></tr>
+  <tr><td><code>self-evolve/store.ts</code></td><td>L3 disk archive, collision-safe <code>se://N</code> handles, <code>index.jsonl</code></td></tr>
+  <tr><td><code>self-evolve/reducer.ts</code></td><td>log → receipt filter + verbatim-quote validation</td></tr>
+  <tr><td><code>self-evolve/pack.ts</code></td><td><code>tool_result</code> transform (reducer → pack) + <code>harness_recall</code></td></tr>
+  <tr><td><code>self-evolve/bpe.ts</code></td><td>cognitive tools + <code>context</code>-event compact</td></tr>
+  <tr><td><code>self-evolve/fusion.ts</code></td><td>turn-boundary verify chaining (bounded)</td></tr>
+  <tr><td><code>self-evolve/telemetry.ts</code></td><td>per-run JSONL: usage, rawEst (labeled estimate), counters</td></tr>
+  <tr><td><code>run-compare.mjs</code></td><td>A/B runner: verbatim prompts, ground-truth checks, per-rep fixture reset</td></tr>
+</table>
+<p style="color:var(--dim); font-size:13px">Not implemented (training-side, out of scope for an extension):
+EvoHarness-RL SFT+GRPO harness annealing, Harness-Zero distillation. The guideline injection is the
+training-free stand-in for the SFT stage.</p>
+
+<script>
+// ---- 1. context re-billing ----
+function bleed(turns) {
+  const log = 2560, base = 4000;
+  let noHarness = 0, withHarness = 0;
+  for (let t = 1; t <= turns; t++) { noHarness += base + log; withHarness += base + 40; }
+  document.getElementById('bleedBar').style.width = Math.min(100, turns * 3.3) + '%';
+  document.getElementById('bleedText').textContent =
+    `no harness: ${(noHarness).toLocaleString()} tok billed   →   with receipt (~40 tok): ${(withHarness).toLocaleString()} tok   (${(100 - withHarness / noHarness * 100).toFixed(1)}% less)`;
+}
+
+// ---- 3.1 reducer demo ----
+const SAMPLE_LOG = (() => {
+  const lines = ['== test run =='];
+  for (let i = 0; i < 40; i++) lines.push(`note: trace ${Math.floor(Math.random() * 1e9)} ok`);
+  lines.push("FAIL test_auth.spec :: KeyError: 'quota_refresh' at line 88");
+  for (let i = 0; i < 40; i++) lines.push(`note: trace ${Math.floor(Math.random() * 1e9)} ok`);
+  lines.push('FAIL test_billing.spec :: TypeError: cannot read properties of undefined (reading \'plan\')');
+  for (let i = 0; i < 40; i++) lines.push(`note: trace ${Math.floor(Math.random() * 1e9)} ok`);
+  lines.push('summary: 2 failed, 18 passed');
+  return lines.join('\n');
+})();
+function runReducer() {
+  const out = document.getElementById('redOut');
+  const lines = SAMPLE_LOG.split('\n');
+  const keep = lines.filter(l => /FAIL|ERROR|summary:/.test(l));
+  const archived = 'se://12';
+  let s = `input: ${lines.length} lines, ~${SAMPLE_LOG.length} chars\n`;
+  s += `archived verbatim to L3: ${archived}\n\n`;
+  s += `receipt (what the model sees):\n`;
+  s += `  [reduced log ${archived}: ${keep.length} evidence lines kept, full text on disk]\n`;
+  keep.forEach(l => s += `  | ${l}\n`);
+  s += `\nvalidation: every receipt line re-checked verbatim against ${archived}…\n`;
+  s += `  ${keep.map(l => `"${l.slice(0, 40)}…" ✓`).join('\n  ')}\n`;
+  s += `  ⇒ receipt VALID — ${keep.length}/${lines.length} lines kept, ${Math.round(100 - keep.join('\n').length / SAMPLE_LOG.length * 100)}% smaller, evidence preserved`;
+  out.textContent = s;
+}
+
+// ---- 3.2 pack demo ----
+function packDemo() {
+  const thr = +document.getElementById('thr').value;
+  document.getElementById('thrVal').textContent = ` threshold = ${thr} tok`;
+  const size = 3200, excerpt = `…first 400 chars… [4,100 chars elided] …last 400 chars…`;
+  const o = document.getElementById('packOut');
+  if (size > thr) {
+    o.textContent =
+`output: ${size} tok  >  threshold ${thr} tok  ⇒ PACK
+  → archived to L3 as se://7 (full ${size} tok on disk, index.jsonl updated)
+  → context keeps (~800 tok):
+     "${excerpt}"
+     [output exceeded threshold; full text archived as se://7 —
+      harness_recall("se://7", page) to read it back in pages]
+
+model reads only the pages it needs; each page = one cheap scoped read.`;
+  } else {
+    o.textContent =
+`output: ${size} tok  ≤  threshold ${thr} tok  ⇒ INLINE
+  → full text stays in context (packing a one-time intentional read
+    would only add recall turns — measured, so 'read' is excluded by default).`;
+  }
+}
+packDemo();
+
+// ---- 3.4 fusion timeline ----
+let fs = 0;
+function fusionStep() {
+  const steps = [...document.querySelectorAll('#fusionSteps .step')];
+  if (fs < steps.length) {
+    steps[fs].classList.add('on');
+    if (fs === 2) steps[fs].classList.add('fired');
+    fs++;
+  } else { steps.forEach(s => s.classList.remove('on', 'fired')); fs = 0; }
+}
+</script>
+</div>
+</body>
+</html>

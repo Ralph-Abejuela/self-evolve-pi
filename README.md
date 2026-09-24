@@ -125,6 +125,11 @@ usage, aggregated by Harbor into `agent_result`).
 | schemelike-metacircular-eval | 1.0 | 1.0 | 2,126,629 | 7,118,747 (outlier) |
 | qemu-alpine-ssh | exception (both arms — infra) | | | |
 
+Full job results (every trial's trajectory, logs and verifier output) are public on Harbor Hub:
+
+- Baseline arm: https://hub.harborframework.com/jobs/b0a875eb-4b90-4acd-a27c-9b6e1dca83d8
+- Extension arm: https://hub.harborframework.com/jobs/cfa8a1d8-6f8b-44d0-a371-0172225fb9ec
+
 **Capability: the extension never scored below baseline** — 7/8 vs 6/8 on the commonly scored tasks
 (plus `torch-pipeline-parallelism` flipping fail→pass, and `regex-chess` solved where baseline hung),
 with the only shared failure (`dna-assembly`) and the one infra exception (`qemu`) identical in both arms.

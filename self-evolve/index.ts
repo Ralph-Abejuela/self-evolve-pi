@@ -20,11 +20,26 @@ export default function selfEvolve(pi: ExtensionAPI) {
 	const cwd = process.cwd();
 	const cfgRef = { current: loadConfig(cwd) };
 	const store = new L3Store(cwd);
-	const counters: Counters = { packedCount: 0, reducedCount: 0, compactedCount: 0, tokensSavedEst: 0 };
+	const counters: Counters = { packedCount: 0, reducedCount: 0, compactedCount: 0, tokensSavedEst: 0, fusionCount: 0, bpeCalls: 0 };
+
+	// training-free stand-in for EvoHarness-RL's SFT stage: teach the model the
+	// syntax of the cognitive tools so BPE slots actually get exercised
+	pi.on("before_agent_start", async () => {
+		return {
+			message: {
+				customType: "self-evolve-guide",
+				content:
+					"[harness guideline] For multi-step tasks: call harness_commit after each completed subtask, " +
+					"harness_track for environment facts worth remembering (paths, ports, versions), and " +
+					"harness_note for reusable lessons. These calls are cheap and keep state durable.",
+				display: false,
+			},
+		};
+	});
 
 	registerPack(pi, () => cfgRef.current, store, counters);
 	registerBpe(pi, () => cfgRef.current, store, counters);
-	registerFusion(pi, () => cfgRef.current);
+	registerFusion(pi, () => cfgRef.current, counters);
 	registerTelemetry(pi, cwd, counters, process.env.SE_RUN ?? "manual");
 
 	pi.registerCommand("evolve", {

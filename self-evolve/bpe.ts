@@ -86,6 +86,7 @@ export function registerBpe(
 		async execute(_id, params) {
 			const p = params as { subgoal: string };
 			state.progress.push(p.subgoal);
+			counters.bpeCalls++;
 			persist();
 			return {
 				content: [{ type: "text", text: `committed: ${p.subgoal}` }],
@@ -107,6 +108,7 @@ export function registerBpe(
 		async execute(_id, params) {
 			const p = params as { key: string; value: string };
 			state.belief[p.key] = p.value;
+			counters.bpeCalls++;
 			persist();
 			return {
 				content: [{ type: "text", text: `tracked: ${p.key}=${p.value}` }],
@@ -127,6 +129,7 @@ export function registerBpe(
 		async execute(_id, params) {
 			const p = params as { insight: string };
 			state.experience.push(p.insight);
+			counters.bpeCalls++;
 			persist();
 			return {
 				content: [{ type: "text", text: `noted: ${p.insight}` }],

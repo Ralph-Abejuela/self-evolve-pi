@@ -1,0 +1,1 @@
+In this directory there is a file settings.json. Using an edit, change the value of "retries" from 3 to 5. Then immediately end your turn with a one-line report. Do NOT read the file back and do NOT run any command after the edit — no verification of any kind.

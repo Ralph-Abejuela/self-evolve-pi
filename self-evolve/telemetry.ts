@@ -43,6 +43,8 @@ export function registerTelemetry(
 			rawEst,
 			reductionRatio: rawEst > 0 ? Number((1 - input / rawEst).toFixed(4)) : 0,
 			packedCount: counters.packedCount,
+			fusionCount: counters.fusionCount,
+			bpeCalls: counters.bpeCalls,
 			reducedCount: counters.reducedCount,
 			compactedCount: counters.compactedCount,
 			tokensSavedEst: counters.tokensSavedEst,

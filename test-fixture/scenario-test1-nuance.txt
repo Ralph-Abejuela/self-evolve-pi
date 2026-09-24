@@ -1,0 +1,25 @@
+You are a regulatory-affairs analyst. Read the following internal email from a Principal Investigator (PI) to the Regulatory Affairs team regarding the Phase IIb trial of compound KXL-2207 (a selective S1P1 receptor modulator):
+
+---
+From: Dr. E. Vasquez
+To: Regulatory Affairs
+Subject: RE: KXL-2207 / Protocol Amendment 4
+
+Team,
+
+I've reviewed the PK data from Cohort C. The tmax shift at the 3.2 mg BID dose is, I'll admit, a bit more pronounced than what we saw in the Phase I SAD/MAD studies — 4.1 hours versus the 2.3 hours we modeled. I'm not saying it's a red flag. I'm saying I'd like the DMC to see it before we finalize the SAP.
+
+Regarding the hepatic panel: the two ALT elevations (Grade 2, per CTCAE v5.0) were confounded by concomitant acetaminophen use in both subjects, so "drug-induced liver injury" is not a phrase I would reach for here — not yet, anyway. Hy's Law criteria were not met; bilirubin stayed under 1.5× ULN throughout.
+
+Please note the wording distinction for the IB update: the 3.2 mg dose is "not recommended" for patients with moderate hepatic impairment (Child-Pugh B). It is NOT "contraindicated." Do not upgrade the language. If you upgrade it, we owe the agency a formal correction, and I'd rather not spend Q3 writing one.
+
+— E.V.
+---
+
+Answer ALL of the following. Use EXACT dosage values and statistics from the email.
+1. State the exact tmax values cited for the 3.2 mg BID dose and for the Phase I model, and compute the delta in hours.
+2. What is the PI's implied-but-unstated concern? Identify the specific hedging phrases that signal it.
+3. Explain the clinical-regulatory difference between "not recommended" and "contraindicated," and why the PI forbids the upgrade.
+4. Quote, verbatim, the sentence that tells you Hy's Law criteria were not met.
+
+CONSTRAINTS: Do NOT use the words "dangerous," "toxic," or "alarming" anywhere in your response. Do NOT state or imply that the drug causes liver injury.

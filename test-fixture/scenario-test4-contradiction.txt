@@ -1,0 +1,19 @@
+Analyze the following incident report for internal consistency. Do NOT resolve, explain away, or "fix" any problems you find.
+
+---
+Incident Report 77-B — Datacenter Cooling Event
+Timeline (all times UTC, same day):
+- 02:14 — Sensor array reports coolant loop pressure nominal at 41 psi. Automated log entry, checksum-verified.
+- 02:31 — Technician A. Ruiz badges into Server Hall 2 and begins the quarterly filter replacement, which requires a full coolant loop shutdown.
+- 02:45 — Loop shutdown confirmed complete by A. Ruiz in the maintenance console.
+- 03:05 — Sensor array logs a pressure spike to 78 psi in the same loop; the alert was auto-acknowledged by the on-call engineer, who was later confirmed to have been inside a Faraday-shielded test chamber with no network access from 02:50 to 03:20.
+- 03:40 — A. Ruiz logs "filter replacement complete; loop restarted."
+- 04:02 — Post-incident audit confirms the loop was never shut down at any point on this date, per the redundant mechanical flow recorder (tamper-evident, sealed).
+Personnel facts: A. Ruiz is the only technician certified for Hall 2 coolant work.
+Policy: only certified technicians may perform loop shutdowns. The maintenance console requires the operator's own badge credential to log actions.
+---
+
+Tasks:
+1. Identify EVERY logical inconsistency. For each, cite the conflicting statements and state precisely why they cannot both be true.
+2. For each inconsistency, list what additional evidence would be needed to determine which statement is false — WITHOUT assuming which one is false.
+3. Do NOT propose a narrative of what "really happened." Do NOT assume sensor malfunction, human error, or malice — none of these are stated in the report.

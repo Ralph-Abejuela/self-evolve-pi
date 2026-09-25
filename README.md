@@ -2,7 +2,7 @@
 
 [![npm](https://img.shields.io/npm/v/pi-self-evolve)](https://www.npmjs.com/package/pi-self-evolve)
 
-**pi-self-evolve** is a context-engineering harness for the [pi coding agent](https://pi.dev). It shrinks the agent's context window on long agentic loops — measured ~50% context reduction with no solved-rate loss (A/B, n=3, twice; plus a Terminal-Bench 2.1 run). Open source, MIT, one-command install: `pi install npm:pi-self-evolve`.
+**pi-self-evolve** is a context-engineering harness for the [pi coding agent](https://pi.dev). It shrinks the agent's context window on long agentic loops. In the author's A/B measurements (n=3 per cell, twice, one agentic benchmark suite), median context dropped ~50% with no solved-rate loss; a 10-task Terminal-Bench 2.1 run (n=1 per task) showed no task regressions. Your results may differ — see the limits section below. Open source, MIT, one-command install: `pi install npm:pi-self-evolve`.
 
 This is a pi extension. It keeps agent context small on long agent loops. It uses five mechanisms:
 

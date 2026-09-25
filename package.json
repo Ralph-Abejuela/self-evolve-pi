@@ -1,7 +1,7 @@
 {
   "name": "pi-self-evolve",
   "version": "0.1.1",
-  "description": "Self-evolving context harness for the pi coding agent. Cuts agent context ~50% on long agentic loops: evidence reducer with verbatim validation, ObservationPack disk archive with recall, online compaction, action fusion, telemetry.",
+  "description": "Self-evolving context harness for the pi coding agent: evidence reducer with verbatim validation, ObservationPack disk archive with recall, online compaction, action fusion, telemetry. In the author's A/B measurements (n=3, twice, one agentic benchmark suite), median context dropped ~50% with no solved-rate loss.",
   "license": "MIT",
   "author": "ralph-abejuela",
   "keywords": [

@@ -85,7 +85,7 @@ A directory with an `index.ts` entry that pi loads automatically, and one module
 
 **Project sources**:
 - pi `docs/extensions.md`: event contracts, tool registration rules, state storage table
-- `C:\Users\user\Documents\test\harness-test.txt`: telemetry metric definitions and test prompts
+- `harness-test.txt` (test asset, repo root): telemetry metric definitions and test prompts
 
 **Practices & standards**:
 - evidence preserving reduction with verbatim quote validation (from the SoL-Pi paper summary)

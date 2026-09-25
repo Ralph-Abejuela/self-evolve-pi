@@ -11,12 +11,15 @@
 // rawEst (telemetry) is labeled an ESTIMATE and is not the headline metric.
 import { spawnSync } from "node:child_process";
 import { readFileSync, existsSync, readdirSync, writeFileSync, mkdirSync, statSync } from "node:fs";
+import { homedir } from "node:os";
 import { join } from "node:path";
 
-const ROOT = "C:\\Users\\user\\Documents\\Git-Clones\\self-evolve-pi";
-const FIXTURE = join(ROOT, "test-fixture");
-const SESSIONS = "C:\\Users\\user\\.pi\\agent\\sessions\\--C--Users-user-Documents-Git-Clones-self-evolve-pi-test-fixture--";
-const EXT = join(ROOT, "self-evolve", "index.ts");
+const REPO = join(import.meta.dirname, "..");
+const FIXTURE = join(REPO, "test-fixture");
+// ponytail: derive the pi session dir slug from the fixture path; override with PI_SESSIONS_DIR if pi changes its slug scheme
+const slug = (p) => `--${p.replace(/[^A-Za-z0-9-]/g, "-")}--`;
+const SESSIONS = process.env.PI_SESSIONS_DIR ?? join(homedir(), ".pi", "agent", "sessions", slug(FIXTURE));
+const EXT = join(REPO, "self-evolve", "index.ts");
 
 const AUTH_BROKEN = `// Quota refresh logic.
 function refreshToken(user) {
@@ -271,7 +274,8 @@ function telemetryCounters(label) {
 	let rawEst = 0, saved = 0, packed = 0, reduced = 0, compacted = 0, fusion = 0, bpe = 0;
 	for (const line of readFileSync(f, "utf-8").split("\n")) {
 		if (!line.trim()) continue;
-		const e = JSON.parse(line);
+		let e;
+		try { e = JSON.parse(line); } catch { continue; }
 		rawEst += e.rawEst; saved += e.tokensSavedEst;
 		packed += e.packedCount ?? 0; reduced += e.reducedCount ?? 0; compacted += e.compactedCount ?? 0;
 		fusion += e.fusionCount ?? 0; bpe += e.bpeCalls ?? 0;
@@ -384,6 +388,6 @@ for (const id of testsOnly) {
 console.log(`totals over ${n} tests: baseline median-sum ${bCtx.toLocaleString()} vs extension ${eCtx.toLocaleString()} -> context reduction ${((1 - eCtx / bCtx) * 100).toFixed(1)}%`);
 console.log(`correctness (5 verbatim tests): baseline ${bOk}/${RUNS_PER_CELL * 5}, extension ${eOk}/${RUNS_PER_CELL * 5}`);
 
-mkdirSync(join(ROOT, "results"), { recursive: true });
-writeFileSync(join(ROOT, "results", "compare.json"), JSON.stringify(results, null, 2));
+mkdirSync(join(REPO, "results"), { recursive: true });
+writeFileSync(join(REPO, "results", "compare.json"), JSON.stringify(results, null, 2));
 console.log("results written to results/compare.json");

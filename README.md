@@ -1,5 +1,7 @@
 # Self-Evolve Pi Extension
 
+[![npm](https://img.shields.io/npm/v/pi-self-evolve)](https://www.npmjs.com/package/pi-self-evolve)
+
 **pi-self-evolve** is a context-engineering harness for the [pi coding agent](https://pi.dev). It shrinks the agent's context window on long agentic loops — measured ~50% context reduction with no solved-rate loss (A/B, n=3, twice; plus a Terminal-Bench 2.1 run). Open source, MIT, one-command install: `pi install npm:pi-self-evolve`.
 
 This is a pi extension. It keeps agent context small on long agent loops. It uses five mechanisms:
@@ -150,7 +152,7 @@ Limits, stated plainly:
 
 ## Reproduce
 
-Adversarial + agentic comparison: `node run-compare.mjs` (env `N_RUNS` to change cell size; results in `results/compare.json`).
+Adversarial + agentic comparison: `node eval/run-compare.mjs` from the repo root (env `N_RUNS` to change cell size; results in `results/compare.json`).
 
 Harbor A/B:
 

@@ -8,15 +8,33 @@ This is a pi extension. It keeps agent context small on long agent loops. It use
 - **Action fusion** (unverified edits). After an edit without verification, it adds one bounded ask at the turn boundary: run the verify command.
 - **Telemetry**. It writes per-run counters to a JSONL file: provider usage, estimated raw tokens, reduction ratio, mechanism counters.
 
+## Install
+
+From npm (recommended):
+
+```
+pi install npm:pi-self-evolve
+```
+
+Or from git:
+
+```
+pi install git:github.com/ralph-abejuela/self-evolve-pi
+```
+
+Or try it for one session without installing:
+
+```
+pi -e npm:pi-self-evolve
+```
+
+Or load a local checkout directly:
+
+```
+pi -e /path/to/self-evolve-pi/self-evolve/index.ts
+```
+
 ## Usage
-
-Load it with pi:
-
-```
-pi --extension C:\Users\ExWaltzPC\Documents\Git-Clones\self-evolve-pi\self-evolve\index.ts
-```
-
-Or copy the `self-evolve/` directory into `~/.pi/agent/extensions/`.
 
 - `/evolve` — show mechanism status and counters
 - `/evolve pack off` — toggle a mechanism (`pack`, `reducer`, `compact`, `fusion`)
@@ -89,13 +107,29 @@ Full job results (every trial's trajectory, logs, verifier output) are public on
 - Extension arm: https://hub.harborframework.com/jobs/cfa8a1d8-6f8b-44d0-a371-0172225fb9ec
 
 ## Research papers
+Mechanism by mechanism:
 
-This extension follows two research papers. They are named here as in the project spec (`docs/specs/0001-extension-stack-and-architecture.md`):
+| Mechanism here | Taken from | Paper |
+| --- | --- | --- |
+| Evidence reducer (`reducer.ts`) | Evidence-preserving reduction: compress logs into a receipt, validate every quoted line word-for-word against the archived source, keep the original on failure | SoL-Pi [^1] |
+| ObservationPack (`pack.ts`) + `harness_recall` | ObservationPack: outputs over ~10 KiB move to a disk archive, context keeps a head/tail excerpt plus a handle, paged recall brings slices back | SoL-Pi [^1] |
+| Context compact (`bpe.ts` commit under pressure) | Online context compact: completed subtasks marked for compaction, window-pressure and cost checks, summarize and reset the active window | SoL-Pi [^1] |
+| Action fusion (`fusion.ts`) | Action fusion: bundle an edit with its verification step into one turn boundary instead of a second model request | SoL-Pi [^1] |
+| BPE cognitive tools (`harness_commit` / `harness_track` / `harness_note` / `harness_state`) | Belief, Progress, Experience slots worked through four explicit cognitive actions: commit, track, recall, note | EvoHarness-RL [^2] |
+| L1 active window / L3 disk archive split (`store.ts`, `.self-evolve/l3/`) | State-tier management: keep the working set in the live window, push the bulk to a durable lower tier | Prime Agent [^3] |
 
-- **Evidence-preserving reduction with verbatim quote validation** — from the SoL-Pi paper summary. Source of the evidence reducer: keep FAIL/ERROR/summary lines as a receipt; check each kept quote word-for-word against the saved log.
-- **Tiered context management** — from the Prime Agent paper summary. Source of the L1 active window / L3 disk-backed archive split (ObservationPack + `harness_recall`).
+[^1]: SoL-Pi: Recursively Scaling Auto-Research Loops for Efficient Agent Harness — NVIDIA. https://arxiv.org/abs/2609.20519 · code: https://github.com/NVlabs/SoL-Pi
+[^2]: EvoHarness-RL: Learning Self-Evolving Runtime Harness Policies — Meta. https://arxiv.org/abs/2608.05446 · OpenReview PDF: https://openreview.net/pdf?id=lFlnP9ZJHl
+[^3]: Prime Agent: A Self-Improving RLM Harness — Prime Intellect. https://arxiv.org/abs/2608.23552 · blog: https://www.primeintellect.ai/blog/prime-agent
 
-No public URLs are on record for these papers in this project's spec. They are named here as in the spec (`docs/specs/0001-extension-stack-and-architecture.md`, References).
+Related systems from the same survey, background for the deferred work (harness annealing and distillation are out of scope for this extension):
+
+- SafeEvolve: Harness-Policy Co-Evolution from Agent Experience for Safety Alignment — https://arxiv.org/abs/2609.02786
+- Beyond Static Harnesses for Long-Horizon Coding Agents (openJiuwen) — https://arxiv.org/abs/2608.27969
+- Harness-Zero: Harness Distillation via Agent-as-Harness — https://arxiv.org/abs/2609.24974
+- GLM Infra Agent (Z.ai): recursive self-improvement on its own serving infrastructure — https://z.ai/blog/glm-built-its-inference-infrastructure
+
+What is re-implemented here vs the papers: this extension re-builds SoL-Pi's four mechanisms, EvoHarness-RL's BPE tool interface, and Prime Agent's tiered archive as a single pi extension, and measures them with its own comparison harness instead of EdgeBench or ALFWorld. The training-side ideas (SFT + GRPO from EvoHarness-RL, LoRA distillation from Harness-Zero) stay out of scope.
 
 ## Potential edge (what the results suggest — not proven at this sample size)
 
@@ -110,7 +144,6 @@ Three possible gains. Read them as suggestions at n=1 per task.
 Limits, stated plainly:
 - n=1 per task. One run can flip by chance. The torch-pipeline flip and the regex-chess solve each have one data point.
 - One outlier run dominated the token totals. Median tokens per task are needed before a token claim.
-- Provider cost was $0.29 (baseline) vs $2.36 (extension). The outlier dominated this too.
 - The robust claim today is the no-harm floor plus the ~50% context reduction on agentic loops (measured at n=3, twice). The capability edge and the token savings are candidate gains. They need more runs.
 
 ## Reproduce

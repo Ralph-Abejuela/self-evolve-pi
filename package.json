@@ -1,0 +1,28 @@
+{
+  "name": "pi-self-evolve",
+  "version": "0.1.0",
+  "description": "Self-evolving context harness for the pi coding agent. Cuts agent context ~50% on long agentic loops: evidence reducer with verbatim validation, ObservationPack disk archive with recall, online compaction, action fusion, telemetry.",
+  "license": "MIT",
+  "author": "ralph-abejuela",
+  "keywords": [
+    "pi-package",
+    "pi",
+    "coding-agent",
+    "context-engineering",
+    "agent",
+    "tokens",
+    "harness"
+  ],
+  "files": [
+    "self-evolve",
+    "README.md",
+    "LICENSE"
+  ],
+  "pi": {
+    "extensions": ["./self-evolve/index.ts"]
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "typebox": "*"
+  }
+}

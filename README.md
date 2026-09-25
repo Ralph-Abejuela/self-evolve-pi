@@ -1,5 +1,7 @@
 # Self-Evolve Pi Extension
 
+**pi-self-evolve** is a context-engineering harness for the [pi coding agent](https://pi.dev). It shrinks the agent's context window on long agentic loops — measured ~50% context reduction with no solved-rate loss (A/B, n=3, twice; plus a Terminal-Bench 2.1 run). Open source, MIT, one-command install: `pi install npm:pi-self-evolve`.
+
 This is a pi extension. It keeps agent context small on long agent loops. It uses five mechanisms:
 
 - **Evidence reducer** (shell outputs). It filters shell output. It keeps FAIL, ERROR, and summary lines. Each kept quote is checked word-for-word against the saved log. If the check fails, the original text stays.
